@@ -22,9 +22,9 @@ plugin({
     const totalMembers = participants?.length || 0;
     if (totalMembers === 0) return m.reply("❌ No members found in this group.");
 
-    if (!(await isBotAdmin(m))) return m.reply('❌ I must be an admin to tag everyone.');
+//    if (!(await isBotAdmin(m))) return m.reply('❌ I must be an admin to tag everyone.');
     
-    if (!(await isAdmin(m))) return m.reply('❌ You must be an admin to use this.');
+//    if (!(await isAdmin(m))) return m.reply('❌ You must be an admin to use this.');
     
 
     // Emojis list and random picker
