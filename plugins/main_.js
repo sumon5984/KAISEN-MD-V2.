@@ -8,18 +8,11 @@ const {
     toAudio,
     config
 } = require('../lib');
+const axios = require("axios");
+const FormData = require('form-data');
 const fs = require('fs');
-
-plugin({
-    pattern: 'url',
-    desc: 'convert image url',
-    react: "⛰️",
-    fromMe: mode,
-    type: "converter"
-}, async (message, match) => {
-    if (!message.isMedia) return message.reply('_please reply to image/sticker/video/audio_');
-    return await sendUrl(message, message.client);
-});
+const os = require('os');
+const path = require("path");
 
 plugin({
     pattern: 'take',

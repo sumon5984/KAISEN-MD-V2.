@@ -10,7 +10,7 @@ const {
 
 
 plugin({
-	pattern: 'insta ?(.*)',
+	pattern: 'ig ?(.*)',
 	desc: 'download Instagram medias',
 	react: "😛",
 	fromMe: mode,

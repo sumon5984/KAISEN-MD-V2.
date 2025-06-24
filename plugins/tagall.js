@@ -39,7 +39,7 @@ plugin({
 
     for (const mem of participants) {
       if (!mem.id) continue;
-      teks += `*│${getEmoji()}* @${mem.id.split('@')[0]}\n`;
+      teks += `*│${getEmoji()} ᩧ𝆺ྀི𝅥* @${mem.id.split('@')[0]}\n`;
     }
 
     teks += '*╰────────────❍*\n';
