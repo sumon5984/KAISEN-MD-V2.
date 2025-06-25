@@ -37,6 +37,15 @@
 
 -------
 
+#### Deploy To Render
+
+
+<a href="https://render.com"><img title="KAISEN-MD Deploy Heroku" src="https://img.shields.io/badge/DEPLOY RENDER-h?color=black&style=for-the-badge&logo=render"></a>
+
+
+
+-------
+
 #### Deploy To Heroku 
 
 <a href="heroku.com"><img title="KAISEN-MD Deploy Heroku" src="https://img.shields.io/badge/DEPLOY HEROKU-h?color=black&style=for-the-badge&logo=heroku"></a>
