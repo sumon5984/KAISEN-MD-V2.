@@ -1,20 +1,13 @@
-# Use Node.js 20 base image
-FROM node:22
-
-# Set working directory
-WORKDIR /app
-
-# Copy package.json and package-lock.json
+FROM node:latest
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
-
-# Copy the rest of the project files
+RUN apt-get update && \
+  apt-get install -y \
+  ffmpeg \
+  imagemagick \
+  webp && \
+  apt-get upgrade -y && \
+  rm -rf /var/lib/apt/lists/*
 COPY . .
-
-# Expose app port (optional; adjust as needed)
-EXPOSE 3000
-
-# Start the app (adjust the command as per your app)
+WORKDIR /test
 CMD ["npm", "start"]
