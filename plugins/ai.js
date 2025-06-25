@@ -1,4 +1,4 @@
-const {
+/*const {
 	plugin,
 	mode,
 	config,
@@ -79,7 +79,7 @@ plugin({
     match = match || message.reply_message.text;
         if (!match) return await message.reply('_please can you provide me a task_');
         if(!config.OPEN_AI) {
-            const res = await getJson(`${config.BASE_URL}api/ai/chatgpt?text=${match}&apikey=${config.INRL_KEY}`);
+            const res = await getJson(``);
             if (!res.status) return await message.send(`Please enter a new apikey, as the given apikey limit has been exceeded. Visit ${config.BASE_URL}api/signup for gettig a new apikey. setvar INRL_KEY: your apikey`);
             return await message.send(res.result);
         } 
@@ -135,3 +135,4 @@ plugin({
 	const res = await getBuffer(`${config.BASE_URL}api/ai/bing?text=${match}&apikey=${config.INRL_KEY}`);
 	return await message.send(res, {},'image');
 });
+*/
