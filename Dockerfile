@@ -1,5 +1,4 @@
 FROM node:latest
-COPY package*.json ./
 RUN npm install
 RUN apt-get update && \
   apt-get install -y \
@@ -9,5 +8,5 @@ RUN apt-get update && \
   apt-get upgrade -y && \
   rm -rf /var/lib/apt/lists/*
 COPY . .
-WORKDIR /test
+WORKDIR /app
 CMD ["npm", "start"]
