@@ -4,6 +4,7 @@ const path = require('path');
 const os = require('os');
 const axios = require('axios');
 const FormData = require('form-data');
+const { CMD_NAME } = require('../config');
 const { plugin, mode } = require('../lib');
 
 plugin({
@@ -18,7 +19,7 @@ plugin({
     const mimeType = (quotedMsg.msg || quotedMsg).mimetype || '';
 
     if (!mimeType) {
-      throw "❌ Please reply to an image, video, or audio file.";
+      throw "Please reply to an image, video, or audio file.";
     }
 
     const mediaBuffer = await quotedMsg.download();
@@ -54,17 +55,17 @@ plugin({
     else if (mimeType.includes('audio')) mediaType = 'Audio';
 
     await message.reply(
-      `✅ *${mediaType} Uploaded Successfully*\n\n` +
+      `✅ *${mediaType} Uploaded Successfully*\n` +
       `*Size:* ${formatBytes(mediaBuffer.length)}\n` +
-      `*URL:* ${mediaUrl}\n\n` +
-      `> © Uploaded by JawadTechX 💜`
+      `*URL:* ${mediaUrl}\n` +
+      `> *${CMD_NAME}*`
     );
 
   } catch (error) {
     console.error(error);
     let errMsg = error.code === 'ETIMEDOUT'
       ? "❌ Timeout error: Catbox is not responding. Try again later or check network."
-      : `❌ Error: ${error.message || error}`;
+      : `🙁 Error: ${error.message || error}`;
     await message.reply(errMsg);
   }
 });
