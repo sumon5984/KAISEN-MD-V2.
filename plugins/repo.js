@@ -12,7 +12,7 @@ plugin({
     desc: "Fetch information about a GitHub repository.",
     type: "info",
 }, async (message, match) => {
-    const githubRepoURL = 'https://github.com/sumon9836/KAISEN-MD';
+    const githubRepoURL = 'https://github.com/sumon9836/KAISEN-MD-V2';
 
     try {
         // Extract username and repo name from the URL
@@ -38,7 +38,7 @@ plugin({
 
 \`🔮 𝐁𝐎𝐓 𝐑𝐄𝐏𝐎 𝐋𝐈𝐍𝐊:\`💀👇
 
-> https://github.com/sumon9836/KAISEN-MD
+> https://github.com/sumon9836/KAISEN-MD-V2
 ━━━━━━━━━━━━━━━━━━━━━━
 
 \`📡 𝐁𝐎𝐓 𝐒𝐔𝐏𝐏𝐎𝐑𝐓 𝐆𝐂:\`💀👇
@@ -118,7 +118,7 @@ plugin({
     // Reuse the same logic by calling the script command handler
     const scriptPlugin = require('./repo.js');
     // Since we can't directly call the other handler, we'll duplicate the logic
-    const githubRepoURL = 'https://github.com/sumon9836/KAISEN-MD';
+    const githubRepoURL = 'https://github.com/sumon9836/KAISEN-MD-V2';
 
     try {
         const [, username, repoName] = githubRepoURL.match(/github\.com\/([^/]+)\/([^/]+)/);
@@ -140,7 +140,7 @@ plugin({
 
 \`🔮 𝐁𝐎𝐓 𝐑𝐄𝐏𝐎 𝐋𝐈𝐍𝐊:\`💀👇
 
-> https://github.com/sumon9836/KAISEN-MD
+> https://github.com/sumon9836/KAISEN-MD-V2
 ━━━━━━━━━━━━━━━━━━━━━━
 
 \`📡 𝐁𝐎𝐓 𝐒𝐔𝐏𝐏𝐎𝐑𝐓 𝐆𝐂:\`💀👇
