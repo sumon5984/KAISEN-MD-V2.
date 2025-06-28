@@ -1,77 +1,82 @@
+const { plugin } = require('../lib');
+const { personalDB } = require('../lib');
+const { getRandom, parsedJid } = require('../lib');
 
-const { plugin, parsedJid, getRandom, config } = require('../lib/');
+const emojis = '😁,😆,😂,🤣,😇,🙂,😘,😉,😜,🥳,🤯,😤,😰,🤔,😶'.split(',');
 
-plugin(
-  {
-    pattern: 'areact ?(.*)',
-    desc: 'auto react to messages',
-    type: 'misc',
-    fromMe: true
-  },
-  async (message, match) => {
-    if (!match)
-      return await message.send(
-        '> Example :\n- areact on | off\n- areact not_react 2364723@g.us\n- areact react_only 72534823@g.us\n- areact only_pm\n- areact only_group'
-      )
-    
-    // Store the setting in config or database
-    config.AREACT = match;
-    await message.send('AREACT updated successfully');
-  }
-)
-
-const emojis =
-  '😁,😆,😅,😂,🥹,🤣,🥲,☺️,😇,🙂,🙃,😘,😉,😙,🥸,🤓,😜,🙁,😞,☹️,😣,🥳,😫,😖,😒,😢,🤯,😤,🥵,😤,🥶,🫢,😰,🤔,🫤,😑,🫨,🙄,🤫,🤥,😶,🫥,😶‍🌫,🥶'.split(
-    ','
-  )
-
-plugin({ 
-  on: 'all', 
-  fromMe: false, 
-  type: 'auto_react',
-  allowBot: false
+// ⚙️ Command to set AREACT value
+plugin({
+  pattern: 'areact ?(.*)',
+  fromMe: true,
+  desc: 'Enable/Disable auto reaction',
+  type: 'mode',
 }, async (message, match) => {
-  // Check if auto-react is enabled
-  const areactSetting = config.AREACT || 'on';
-  const on_off = areactSetting.includes('off');
-  if (on_off) return;
-
-  // Skip if it's not a text message
-  if (!message.text || message.text.trim() === '') return;
-
-  // Handle not_react jids (exclude these from auto-react)
-  const not_react_jids = areactSetting.includes('not_react');
-  if (not_react_jids) {
-    const not_gids = parsedJid(areactSetting.split('not_react')[1]?.trim() || '') || [];
-    if (not_gids.includes(message.jid)) return;
+  if (!match) {
+    return await message.send(
+      `> *Usage:*\n` +
+      `- .areact on | off\n` +
+      `- .areact only_pm\n` +
+      `- .areact only_group\n` +
+      `- .areact react_only <jid>\n` +
+      `- .areact not_react <jid>`
+    );
   }
 
-  // Handle react_only jids (only react in these chats)
-  const react_jids = areactSetting.includes('react_only');
-  if (react_jids) {
-    const gids = parsedJid(areactSetting.split('react_only')[1]?.trim() || '') || [];
-    if (!gids.includes(message.jid)) return;
+  await personalDB(['areact'], { content: match }, 'set');
+  await message.send('✅ AREACT updated.');
+});
+
+// 🧾 Show current AREACT config
+plugin({
+  pattern: 'areactstatus',
+  fromMe: true,
+  desc: 'Show auto react setting',
+  type: 'mode',
+}, async (message) => {
+  const settings = await personalDB(['areact'], {}, 'get');
+  const config = settings.areact || 'not set';
+  await message.send(`📌 *AREACT:*\n\`\`\`${config}\`\`\``);
+});
+
+// 🔁 Main auto-react logic
+plugin({
+  on: 'text',
+  fromMe: false,
+  type: 'auto_react',
+}, async (message) => {
+  try {
+    if (message.fromMe) return; // ✅ Ignore self messages
+    if (!message.text || message.text.trim() === '') return; // ✅ Ignore empty/media
+
+    const settings = await personalDB(['areact'], {}, 'get');
+    const config = settings.areact || '';
+
+    if (!config || config.includes('off')) return;
+
+    const jid = message.jid;
+
+    // Filter: not_react
+    if (config.includes('not_react') && parsedJid(config).includes(jid)) return;
+
+    // Filter: react_only
+    if (config.includes('react_only') && !parsedJid(config).includes(jid)) return;
+
+    // Filter: only_pm
+    if (config.includes('only_pm') && message.isGroup) return;
+
+    // Filter: only_group
+    if (config.includes('only_group') && !message.isGroup) return;
+
+    // ✅ Send reaction
+    const reaction = {
+      text: getRandom(emojis),
+      key: message.key,
+    };
+
+    console.log("✅ Reacting to:", jid, "→", reaction.text);
+    await message.send(reaction, {}, 'react');
+
+  } catch (err) {
+    console.error('❌ Auto-react error:', err);
   }
-
-  // Handle only_pm and only_group settings
-  const onlyPm = areactSetting.includes('only_pm');
-  const onlyGroup = areactSetting.includes('only_group');
-  
-  const isReact =
-    !message.fromMe &&
-    (onlyPm ? !message.isGroup : true) &&
-    (onlyGroup ? message.isGroup : true) &&
-    (!onlyPm || !message.isGroup) &&
-    (!onlyGroup || message.isGroup);
-
-  if (!isReact) return;
-
-  // Send random emoji reaction
-  const randomEmoji = getRandom(emojis);
-  return await message.client.sendMessage(message.jid, {
-    react: {
-      text: randomEmoji,
-      key: message.key
-    }
-  });
 });
