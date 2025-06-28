@@ -1,36 +1,49 @@
 
-const {
-  plugin,
-  commands,
-  mode
-} = require('../lib');
 
-const { BOT_INFO, MENU_FONT } = require("../config");
-const { version } = require('../package.json');
-const { fancy, readMore, isUrls } = require("../lib/extra");
+const { plugin, commands, mode } = require('../lib');
+const { BOT_INFO }  = require('../config');
+const { version }   = require('../package.json');
+const { isUrls }    = require('../lib/extra');
+const os            = require('os');
+
+const runtime = secs => {
+  const pad = s => s.toString().padStart(2, '0');
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  return `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+};
+
+const readMore = String.fromCharCode(8206).repeat(4001);
 
 plugin({
   pattern: 'menu',
-  desc: 'Displays bot command list',
-  react: "👀",
+  desc: 'Displays the command menu',
   type: 'whatsapp',
   fromMe: mode
-}, async (message, match) => {
-  const owner = BOT_INFO.split(';')[1];
-  const botName = BOT_INFO.split(';')[0];
-  let url = BOT_INFO.split(';')[2];
+}, async (message) => {
+  const [botName, ownerName, rawMediaUrl] = BOT_INFO.split(';');
+  const mediaUrl = rawMediaUrl?.replace(/&gif/g, '');
+  const isGif = rawMediaUrl?.includes('&gif');
+  const userName = message.pushName || 'User';
+  const prefix = '.';
 
-  const botFancy = await fancy(botName, 4); // Anime style
+  const usedGB = ((os.totalmem() - os.freemem()) / 1073741824).toFixed(2);
+  const totGB  = (os.totalmem() / 1073741824).toFixed(2);
+  const ram    = `${usedGB} / ${totGB} GB`;
 
-  let menu = `╭─〔* ${botFancy} *〕─⊰
-┃💖 *Owner:* ${owner}
-┃🔮 *User:* ${message.pushName.replace(/[\r\n]+/gm, "")}
-┃🍓 *Commands:* ${commands.length}
-┃⚙️ *Version:* v${version}
-╰⊹──────────────────⊱
-
-${await readMore()}
-🍒 *Command Categories:*\n`;
+  let menuText = `
+*╭══〘〘 ${botName} 〙〙*
+*┃❍ ʀᴜɴ     :* ${runtime(process.uptime())}
+*┃❍ ᴍᴏᴅᴇ    :* ${mode ? 'Private' : 'Public'}
+*┃❍ ᴘʀᴇғɪx  :* ${prefix}
+*┃❍ ʀᴀᴍ     :* ${ram}
+*┃❍ ᴠᴇʀsɪᴏɴ :* v${version}
+*┃❍ ᴜsᴇʀ    :* ${userName}
+*╰═════════════════⊷*
+${readMore}
+*♡︎•━━━━━━☻︎━━━━━━•♡︎*
+`;
 
   let cmnd = [], category = [];
 
@@ -43,126 +56,37 @@ ${await readMore()}
     }
   }
 
-  // Emoji list
-  let emojis = ['⚡', '✨', '🎖️', '💎', '💗', '❤‍🩹', '👻', '🌟', '🪄', '🎋', '🪼', '🍿', '👀', '👑', '🦋', '🐋', '🌻', '🌸', '🔥', '🍉', '🍧', '🍨', '🪀', '🎾', '🪇', '🎲', '🎡', '🧸', '🎀', '🎈', '🩵', '♥️', '🚩', '🏳️‍🌈', '🔪', '🎏', '🫐', '🍓', '🪸', '💀'];
-  const getEmoji = () => emojis[Math.floor(Math.random() * emojis.length)];
-  const emoji = getEmoji();
-
-  const [typFont, ptrnFont] = MENU_FONT.split(';').map(f => isNaN(f) || parseInt(f) > 35 ? null : f);
-  cmnd.sort();
+  const BOT_INFO_FONT = process.env.BOT_INFO_FONT || '0;0';
+  const [typFont, ptrnFont] = BOT_INFO_FONT.split(';').map(f => isNaN(f) || parseInt(f) > 35 ? null : f);
 
   for (const cat of category.sort()) {
-    const typ = typFont && typFont !== '0'
+    const typeTitle = typFont && typFont !== '0'
       ? await fancy(cat, parseInt(typFont))
-      : `🌟 ${cat}`;
-
-    menu += `\n${emoji} *${typ}*\n`;
+      : `${cat}`;
+    menuText += `\n *╭────❒ ${typeTitle} ❒⁠⁠⁠⁠*\n`;
 
     for (const { cmd, type } of cmnd.filter(c => c.type === cat)) {
       const styled = ptrnFont && ptrnFont !== '0'
         ? await fancy(cmd.trim(), parseInt(ptrnFont))
-        : `${cmd}`;
-      menu += ` ${styled}\n`;
+        : `*├◈ ${cmd}*`;
+      menuText += ` ${styled}\n`;
     }
+    menuText += ` *┕──────────────────❒*\n`;
   }
 
-  menu += `\n🩷 Made with `;
-
-
-  const isGif = BOT_INFO.includes('&gif');
-  url = url.replace(/&gif/g, '');
+  menuText += `\n💖 *Made with love by* ${ownerName}`;
 
   try {
-    if (isUrls(url)) {
-      if (isGif) {
-     
-        await message.client.sendMessage(message.jid, {
-          video: { url },
-          gifPlayback: true,
-          caption: menu
-        }, { quoted: message });
-      } else {
-
-        await message.client.sendMessage(message.jid, {
-          image: { url },
-          caption: menu
-        }, { quoted: message });
-      }
+    if (mediaUrl && isUrls(mediaUrl)) {
+      const opts = isGif
+        ? { video: { url: mediaUrl }, gifPlayback: true, caption: menuText }
+        : { image: { url: mediaUrl }, caption: menuText };
+      await message.client.sendMessage(message.jid, opts, { quoted: message });
     } else {
-      await message.send(menu);
+      await message.send(menuText);
     }
-  } catch (e) {
-    console.error("menu image error", e);
-    await message.send(menu + `\n\n⚠️ *Image load failed, sending text only.*`);
+  } catch (err) {
+    console.error('❌ Menu send error:', err);
+    await message.send(menuText + `\n\n⚠️ *Media failed to load, sending text only.*`);
   }
-});
-
-
-
-const { uptime } = require("os");
-
-async function readMore() {
-  const readmore = String.fromCharCode(8206).repeat(4001);
-  return readmore;
-};
-
-const clockString = (duration) => {
-    let seconds = Math.floor((duration / 1000) % 60),
-        minutes = Math.floor((duration / (1000 * 60)) % 60),
-        hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-    
-    hours = hours < 10 ? "0" + hours : hours;
-    minutes = minutes < 10 ? "0" + minutes : minutes;
-    seconds = seconds < 10 ? "0" + seconds : seconds;
-    
-    return hours + ":" + minutes + ":" + seconds;
-};
-
-plugin({
-  pattern: 'menu',
-  desc: 'Displays bot command list',
-  react: "👀",
-  type: 'whatsapp',
-  fromMe: mode
-}, async (message, match) => {
-    let [date, time] = new Date().toLocaleString("en-IN", { timeZone: config.TIMEZONE }).split(",");
-    let menu = `╭━━━〔 ${BOT_INFO.split(';')[0]} ⁩〕━━━···▸\n┃╭──────────────···▸\n✧│ *ᴏᴡɴᴇʀ :*  ${BOT_INFO.split(';')[1]}\n✧│ *ᴜsᴇʀ :* ${message.pushName.replace(/[\r\n]+/gm, "")}\n✧│ *ᴘʟᴜɢɪɴs :* ${commands.length}\n✧│ *ᴅᴀᴛᴇ :* ${date}\n✧│ *ᴛɪᴍᴇ :* ${time}\n✧│ *ᴜᴘᴛɪᴍᴇ :* ${clockString(uptime())}\n✧│ *ᴠᴇʀsɪᴏɴ :* ᴠ${version}\n┃╰──────────────···▸\n╰━━━━━━━━━━━━━━━···▸\n\n\n${await readMore()}\n╭━━━━━━━━━━━━━━━···▸\n╽`;
-    let cmnd = [], category = [];
-    for (const command of plugins.commands) {
-        const cmd = command.pattern?.toString().match(/(\W*)([A-Za-züşiğ öç1234567890]*)/)?.[2];
-        if (!command.dontAddCommandList && cmd) {
-            const type = (command.type || "misc").toUpperCase();
-            cmnd.push({ cmd, type });
-            if (!category.includes(type)) category.push(type);
-        }
-    }
-
-    const [typFont, ptrnFont] = MENU_FONT.split(';').map(font => isNaN(font) || parseInt(font) > 35 ? null : font);
-    cmnd.sort();
-    for (const cmmd of category.sort()) {
-        let typ;
-        if (typFont && typFont !== '0') {
-            typ = await fancy.apply(fancy[parseInt(typFont)-1], cmmd);
-        } else {
-            typ = cmmd.toUpperCase();
-        }
-        
-        menu += `\n┃  ╭─────────────┅┄▻\n┃  │  *➻ ${typ}*\n┃  ╰┬────────────┅┄▻\n┃  ┌┤`;
-        for (const { cmd, type } of cmnd.filter(({ type }) => type === cmmd)) {
-            let ptrn;
-            if (ptrnFont && ptrnFont !== '0') {
-                ptrn = await fancy.apply(fancy[parseInt(ptrnFont)-1], cmd.trim().toUpperCase());
-            } else {
-                ptrn = cmd.charAt(0).toUpperCase() + cmd.slice(1).toLowerCase();
-            }
-            menu += `\n┃  │ ‣ ${ptrn}`;
-        }
-        menu += `\n┃  ╰─────────────···▸`;
-    }
-    menu += ` ╰━━━━━━━━━━━┈⊷\nmade with 🤍`;
-    let url = BOT_INFO.split(';')[2];
-    let options = BOT_INFO.includes('&gif') ? { gifPlayback: true, caption: menu } : { caption: menu };  
-    url = url.replace(/&gif/g, '');
-    if (isUrl(url)) await message.sendFromUrl(url, options);
-    else await message.send(menu);
 });
