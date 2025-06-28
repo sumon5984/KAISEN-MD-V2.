@@ -28,46 +28,67 @@ plugin({
 	})
 });
 plugin({
-	pattern: 'kick ?(.*)',
-	type: 'group',
-	fromMe: true,
-	onlyGroup: true,
-	desc: "kick group member'"
+    pattern: 'kick ?(.*)',
+    type: 'group',
+    fromMe: true,
+    onlyGroup: true,
+    desc: "Kick group member(s)"
 }, async (message, match) => {
-	let admin = await isAdmin(message);
-	let user = message.send_message.sender || match;
-	if (!user) return await message.send('_please reply to user_', {
-		linkPreview: linkPreview()
-	})
-	user = user.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
-	if (match != "all") {
-		if (!await isBotAdmin(message)) return await message.send('_bot must be admin first_', {
-			linkPreview: linkPreview()
-		})
-		await message.client.groupParticipantsUpdate(message.jid,
-			[user], "remove");
-		return await message.send(`_@${user.split('@')[0]} kick from group_`, {
-			mentions: [user],
-			linkPreview: linkPreview()
-		});
-	} else if (match.toLowerCase() == 'all') {
-		if (!await isBotAdmin(message)) return await message.send('_bot must be admin first_', {
-			linkPreview: linkPreview()
-		})
-		const groupMetadata = await message.client.groupMetadata(message.jid).catch(e => {})
-		const participants = await groupMetadata.participants;
-		let admins = await participants.filter(v => v.admin !== null).map(v => v.id);
-		participants.filter((U) => !U.admin == true).map(({
-			id
-		}) => id).forEach(async (k) => {
-			await sleep(2500);
-			await message.client.groupParticipantsUpdate(message.jid,
-				[k], "remove");
-		});
-		return await message.send('all group Participants will been kicked!')
-	}
-});
+    if (!await isBotAdmin(message)) {
+        return await message.send('_❌ Bot must be admin first!_', { linkPreview: linkPreview() });
+    }
 
+    const groupMetadata = await message.client.groupMetadata(message.jid).catch(e => {});
+    if (!groupMetadata) return await message.send('_❌ Failed to fetch group info._');
+
+    const participants = groupMetadata.participants || [];
+    const admins = participants.filter(p => p.admin !== null).map(p => p.id);
+    const botNumber = message.user;
+
+    if (match.toLowerCase() === "all") {
+        let kicked = 0, failed = 0;
+
+        for (const p of participants) {
+            const id = p.id;
+
+            if (admins.includes(id) || id === botNumber) continue;
+
+            try {
+                await message.client.groupParticipantsUpdate(message.jid, [id], "remove");
+                kicked++;
+                await sleep(2000);
+            } catch (e) {
+                failed++;
+                console.error(`❌ Failed to kick ${id}:`, e);
+            }
+        }
+
+        return await message.send(`👥 Kick All Report:\n✅ Kicked: *${kicked}*\n❌ Failed: *${failed}*`);
+    }
+
+    let user = match || (message.quoted ? message.quoted.sender : null);
+    if (!user) return await message.send('_❌ Please reply to a user or give number to kick._');
+
+    user = user.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
+
+    if (user === botNumber) {
+        return await message.send("_🤖 I can't kick myself!_");
+    }
+
+    if (admins.includes(user)) {
+        return await message.send("_❌ Can't kick an admin!_");
+    }
+
+   try {
+        await message.client.groupParticipantsUpdate(message.jid, [user], "remove");
+        return await message.send(`👢 _@${user.split('@')[0]} has been kicked._`, {
+            mentions: [user]
+        });
+    } catch (e) {
+        console.error("Kick error:", e);
+        return await message.send('_❌ Failed to kick user. Maybe already left or permission denied._');
+    }
+});
 plugin({
 	pattern: 'demote ?(.*)',
 	type: 'group',
