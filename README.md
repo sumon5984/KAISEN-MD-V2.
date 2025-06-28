@@ -23,7 +23,7 @@
 
 #### Deploy To Panel 
 
-<a href="https://drive.google.com/file/d/19H8_kK98MDlGvSP5su6qkEj08wlFDmuF/view?usp=drivesdk"><img title="KAISEN-MD PANEL File" src="https://img.shields.io/badge/File-KAISEN MD PANEL -h?color=black&style=for-the-badge&logo="></a>
+<a href="https://www.mediafire.com/file/zqpx5boxq284bm5/index.js/file"><img title="KAISEN-MD PANEL File" src="https://img.shields.io/badge/File-KAISEN MD PANEL -h?color=black&style=for-the-badge&logo="></a>
 
 
 <a href="https://katabump.com"><img title="KataBump" src="https://img.shields.io/badge/DEPLOY Katabump-h?color=black&style=for-the-badge&logo=katabump"></a>
