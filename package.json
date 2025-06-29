@@ -13,9 +13,10 @@
     "url": "git+https://github.com/sumon9836/KAISEN-MD.git test"
   },
   "dependencies": {
+    "@adiwajshing/baileys": "^5.0.0",
     "@adiwajshing/keyed-db": "^0.2.4",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
-    "@whiskeysockets/baileys": "npm:asitha-new-v99",
+    "@whiskeysockets/baileys": "^6.7.18",
     "awesome-phonenumber": "^2.64.0",
     "axios": "^1.10.0",
     "cheerio": "^1.0.0-rc.10",
