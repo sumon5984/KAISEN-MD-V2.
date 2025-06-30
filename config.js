@@ -29,7 +29,7 @@ module.exports = {
     CHATBOT : process.env.CHATBOT || "false",//true, pm, group
     REACT : process.env.REACT || "true",//true, command, emoji
     WARNCOUND : process.env.WARNCOUND || 5,
-    BOT_INFO : process.env.BOT_INFO || "KAISEN-BOT-MD;s&& bro;https://files.catbox.moe/ldbrkw.jpg",
+    BOT_INFO : process.env.BOT_INFO || "KAISEN-BOT-MD;kaisen;https://files.catbox.moe/tzdb08.mp4",
     WORKTYPE : process.env.WORKTYPE || "public",
     CMD_NAME : process.env.CMD_NAME || "KAISEN-BOT",
     PREFIX : process.env.PREFIX || "[.,!]",//both  .  and [.] equal, for multi prefix we use [] this
