@@ -76,17 +76,23 @@ ${readMore}
 
   menuText += `\n💖 *Made with love by* ${ownerName}`;
 
-  try {
-    if (mediaUrl && isUrls(mediaUrl)) {
-      const opts = isGif
-        ? { video: { url: mediaUrl }, gifPlayback: true, caption: menuText }
-        : { image: { url: mediaUrl }, caption: menuText };
-      await message.client.sendMessage(message.jid, opts, { quoted: message });
-    } else {
-      await message.send(menuText);
-    }
-  } catch (err) {
-    console.error('❌ Menu send error:', err);
-    await message.send(menuText + `\n\n⚠️ *Media failed to load, sending text only.*`);
+ try {
+  if (mediaUrl && isUrls(mediaUrl)) {
+    const opts = {
+      video: { url: mediaUrl },
+      gifPlayback: true, // this makes the video behave like a GIF
+      caption: menuText,
+      mimetype: 'video/mp4' // required for WhatsApp
+    };
+
+    await message.client.sendMessage(message.jid, opts, { quoted: message });
+  } else {
+    await message.send(menuText);
   }
+} catch (err) {
+  console.error('❌ Menu send error:', err);
+  await message.send(
+    menuText + `\n\n⚠️ *Media failed to load, sending text only.*`
+  );
+ }
 });
