@@ -1,4 +1,3 @@
-
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -6,74 +5,75 @@ const axios = require('axios');
 const FormData = require('form-data');
 const { CMD_NAME } = require('../config');
 const { plugin, mode } = require('../lib');
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 
 plugin({
   pattern: 'url',
-  desc: 'convert image url',
+  desc: 'Convert media to Catbox URL',
   react: "⛰️",
   fromMe: mode,
   type: "converter"
 }, async (message, match) => {
   try {
-    const quotedMsg = message.quoted ? message.quoted : message;
-    const mimeType = (quotedMsg.msg || quotedMsg).mimetype || '';
+    const quoted = message.reply_message || message;
+    const mime = quoted?.msg?.mimetype;
 
-    if (!mimeType) {
-      throw "Please reply to an image, video, or audio file.";
+    if (!mime) return await message.reply("❌ Please reply to an image, video, or audio message.");
+
+    // Download media buffer
+    const mtype = mime.split("/")[0];
+    const stream = await downloadContentFromMessage(quoted.msg, mtype);
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) {
+      buffer = Buffer.concat([buffer, chunk]);
     }
 
-    const mediaBuffer = await quotedMsg.download();
-    const tempFilePath = path.join(os.tmpdir(), `catbox_upload_${Date.now()}`);
-    fs.writeFileSync(tempFilePath, mediaBuffer);
+    // Temp file creation
+    const ext = mime.includes("jpeg") ? ".jpg" :
+                mime.includes("png") ? ".png" :
+                mime.includes("video") ? ".mp4" :
+                mime.includes("audio") ? ".mp3" : "";
+    const filename = `catbox_upload_${Date.now()}${ext}`;
+    const filepath = path.join(os.tmpdir(), filename);
+    fs.writeFileSync(filepath, buffer);
 
-    let extension = '';
-    if (mimeType.includes('image/jpeg')) extension = '.jpg';
-    else if (mimeType.includes('image/png')) extension = '.png';
-    else if (mimeType.includes('video')) extension = '.mp4';
-    else if (mimeType.includes('audio')) extension = '.mp3';
-
-    const fileName = `file${extension}`;
+    // Upload to Catbox
     const form = new FormData();
-    form.append('fileToUpload', fs.createReadStream(tempFilePath), fileName);
+    form.append('fileToUpload', fs.createReadStream(filepath), filename);
     form.append('reqtype', 'fileupload');
 
-    const response = await axios.post("https://catbox.moe/user/api.php", form, {
+    const res = await axios.post("https://catbox.moe/user/api.php", form, {
       headers: form.getHeaders(),
-      timeout: 15000 // 15 seconds timeout
+      timeout: 15000,
     });
 
-    if (!response.data) {
-      throw "❌ No response from Catbox";
+    fs.unlinkSync(filepath); // Delete temp file
+
+    if (!res.data || !res.data.startsWith("https://")) {
+      throw "❌ Catbox response invalid or empty.";
     }
 
-    const mediaUrl = response.data;
-    fs.unlinkSync(tempFilePath);
-
-    let mediaType = 'File';
-    if (mimeType.includes('image')) mediaType = 'Image';
-    else if (mimeType.includes('video')) mediaType = 'Video';
-    else if (mimeType.includes('audio')) mediaType = 'Audio';
-
+    const url = res.data;
     await message.reply(
-      `✅ *${mediaType} Uploaded Successfully*\n` +
-      `*Size:* ${formatBytes(mediaBuffer.length)}\n` +
-      `*URL:* ${mediaUrl}\n` +
+      `✅ *Media Uploaded Successfully*\n` +
+      `*Type:* ${mime}\n` +
+      `*Size:* ${formatBytes(buffer.length)}\n` +
+      `*URL:* ${url}\n\n` +
       `> *${CMD_NAME}*`
     );
-
-  } catch (error) {
-    console.error(error);
-    let errMsg = error.code === 'ETIMEDOUT'
-      ? "❌ Timeout error: Catbox is not responding. Try again later or check network."
-      : `🙁 Error: ${error.message || error}`;
-    await message.reply(errMsg);
+  } catch (err) {
+    console.error(err);
+    const msg = err.code === 'ETIMEDOUT'
+      ? "❌ Catbox timeout. Please try again later."
+      : `❌ Error: ${err.message || err}`;
+    await message.reply(msg);
   }
 });
 
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
+  if (!bytes) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }

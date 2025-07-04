@@ -5,6 +5,10 @@ const {
 	linkPreview,
 	config
 } = require('../lib');
+const { 
+	downloadContentFromMessage,
+	jidNormalizedUser
+} = require('@whiskeysockets/baileys');
 
 
 plugin({
@@ -258,23 +262,48 @@ plugin({
 	})
 });
 
+
+
 plugin({
-	pattern: 'gpp ?(.*)',
-	type: 'group',
-	fromMe: true,
-	onlyGroup: true,
-	desc: 'update group icon'
+  pattern: 'gpp ?(.*)',
+  type: 'group',
+  fromMe: true,
+  onlyGroup: true,
+  desc: 'update group icon'
 }, async (message, match) => {
-	if (!await isBotAdmin(message)) return await message.send('_bot must be admin first_', {
-		linkPreview: linkPreview()
-	})
-	if (!message.reply_message.image) return await message.send('__please reply to a image message_');
-	let download = await message.client.downloadMediaMessage(message.reply_message.imageMessage);
-	await message.client.updateProfilePicture(message.jid, download);
-	return message.send('_Group profile updated_', {
-		linkPreview: linkPreview()
-	})
-})
+  if (!await isBotAdmin(message)) {
+    return await message.send('_bot must be admin first_');
+  }
+
+  if (!message.reply_message || !message.reply_message.imageMessage) {
+    return await message.send('_Please reply to an image message_');
+  }
+
+  const media = message.reply_message.imageMessage;
+  const stream = await downloadContentFromMessage(media, 'image');
+
+  let buffer = Buffer.from([]);
+  for await (const chunk of stream) {
+    buffer = Buffer.concat([buffer, chunk]);
+  }
+
+  // Upload the new profile picture
+  await message.client.query({
+    tag: 'iq',
+    attrs: {
+      to: jidNormalizedUser(message.jid),
+      type: 'set',
+      xmlns: 'w:profile:picture'
+    },
+    content: [{
+      tag: 'picture',
+      attrs: { type: 'image' },
+      content: buffer
+    }]
+  });
+
+  return await message.send('_Group profile updated_');
+});
 
 plugin({
 	pattern: 'fullgpp ?(.*)',

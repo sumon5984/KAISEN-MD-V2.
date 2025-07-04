@@ -6,8 +6,10 @@ const {
 	config
 } = require('../lib');
 const {
-	WA_DEFAULT_EPHEMERAL
-} = require("@whiskeysockets/baileys");
+WA_DEFAULT_EPHEMERAL,
+	downloadContentFromMessage,
+jidNormalizedUser } = require('@whiskeysockets/baileys');
+
 
 plugin({
         pattern: 'whois ?(.*)',
@@ -84,7 +86,7 @@ plugin({
 });
 
 plugin({
-  pattern: "pp",
+    pattern: "pp",
   desc: "Change bot's profile picture (reply to image)",
   react: "😳",
   type: "owner",
@@ -94,18 +96,33 @@ plugin({
     const conn = message.client;
     const quoted = message.reply_message;
 
-    if (!quoted || !quoted.image) {
-      return await message.reply("😟 please reply photo");
+    if (!quoted || !quoted.imageMessage) {
+      return await message.reply("😟 Please reply to an image message.");
     }
 
-    const mediaBuffer = await conn.downloadMediaMessage(quoted.image);
-    if (!mediaBuffer) {
-      return await message.reply("🥹 Failed to set image.");
+    // Download image
+    const stream = await downloadContentFromMessage(quoted.imageMessage, 'image');
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) {
+      buffer = Buffer.concat([buffer, chunk]);
     }
 
-    await conn.updateProfilePicture(message.botNumber, mediaBuffer);
-   return await message.reply("😊 Profile picture updated successfully.");
-    
+    // Update bot profile picture
+    await conn.query({
+      tag: 'iq',
+      attrs: {
+        to: jidNormalizedUser(message.botNumber),
+        type: 'set',
+        xmlns: 'w:profile:picture'
+      },
+      content: [{
+        tag: 'picture',
+        attrs: { type: 'image' },
+        content: buffer
+      }]
+    });
+
+    return await message.reply("😊 Profile picture updated successfully.");
   } catch (err) {
     console.error("PP command error:", err);
     return await message.reply("🥲 An error occurred while updating profile picture.");
@@ -122,21 +139,36 @@ plugin({
     const conn = message.client;
     const quoted = message.reply_message;
 
-    if (!quoted || !quoted.image) {
-      return await message.reply("😟 please reply fullpp photo");
+    if (!quoted || !quoted.imageMessage) {
+      return await message.reply("😟 Please reply to a full image message.");
     }
 
-    const mediaBuffer = await conn.downloadMediaMessage(quoted.image);
-    if (!mediaBuffer) {
-      return await message.reply("🥹 Failed to set image.");
+    // Download the image as buffer
+    const stream = await downloadContentFromMessage(quoted.imageMessage, 'image');
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) {
+      buffer = Buffer.concat([buffer, chunk]);
     }
 
-    await conn.updateProfilePicture(message.botNumber, mediaBuffer);
-   return await message.reply("😊 Profile picture updated successfully.");
-    
+    // Update full profile picture using raw XML request
+    await conn.query({
+      tag: 'iq',
+      attrs: {
+        to: jidNormalizedUser(message.botNumber),
+        type: 'set',
+        xmlns: 'w:profile:picture'
+      },
+      content: [{
+        tag: 'picture',
+        attrs: { type: 'image' },
+        content: buffer
+      }]
+    });
+
+    return await message.reply("✅ Full profile picture updated successfully.");
   } catch (err) {
-    console.error("PP command error:", err);
-    return await message.reply("🥲 An error occurred while updating profile picture.");
+    console.error("FullPP command error:", err);
+    return await message.reply("🥲 An error occurred while updating full profile picture.");
   }
 });
 
